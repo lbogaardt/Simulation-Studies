@@ -16,10 +16,13 @@ output:
 
 # Introduction
 
+And we set a seed to ensure each run of this document produces the same output.
+
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(nlme)
 library(mvtnorm)
+set.seed(123)
 ```
 
 # Functions

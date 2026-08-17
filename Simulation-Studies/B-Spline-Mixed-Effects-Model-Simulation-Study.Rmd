@@ -20,7 +20,7 @@ body{text-align: justify}
 
 # Introduction
 
-This document describes a simulation study of a mixed effects linear regression model with a 3-part B-spline as a fixed effect and a single random intercept per participant. First, the model is used to generate multiple datasets which are subsequently analysed to estimate the model's parameters via maximum likelihood. Various estimation methods are used and compared. All methods result in the same estimates but some are computationally faster than others. The document uses the packages _tidyverse_, _JOPS_, _nlme_, _lme4_, _gamlss_, _mgcv_ and _matrixStats_.
+This document describes a simulation study of a mixed effects linear regression model with a 3-part B-spline as a fixed effect and a single random intercept per participant. First, the model is used to generate multiple datasets which are subsequently analysed to estimate the model's parameters via maximum likelihood. Various estimation methods are used and compared. All methods result in the same estimates but some are computationally faster than others. The document uses the packages _tidyverse_, _JOPS_, _nlme_, _lme4_, _gamlss_, _mgcv_ and _matrixStats_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
@@ -36,6 +36,7 @@ knitr::opts_knit$set(
 knitr::opts_chunk$set(
   fig.path = tempdir()
 )
+set.seed(123)
 ```
 
 # Functions

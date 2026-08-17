@@ -18,10 +18,11 @@ output:
 
 This document describes ...
 
-The document uses the package _tidyverse_.
+The document uses the package _tidyverse_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
+set.seed(123)
 ```
 
 ```{r}

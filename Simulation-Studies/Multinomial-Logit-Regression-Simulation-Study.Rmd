@@ -18,12 +18,13 @@ output:
 
 This document describes ...
 
-The document uses the packages _tidyverse_, _EnvStats_ and _VGAM_.
+The document uses the packages _tidyverse_, _EnvStats_ and _VGAM_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(EnvStats)
 library(VGAM)
+set.seed(123)
 ```
 
 # Functions

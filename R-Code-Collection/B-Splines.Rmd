@@ -20,7 +20,7 @@ body{text-align: justify}
 
 # Introduction
 
-This document examines B-splines and their properties. The document uses the packages _tidyverse_ and _splines_. We also set a seed to ensure every run of this document produces the same output.
+This document examines B-splines and their properties. The document uses the packages _tidyverse_ and _splines_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)

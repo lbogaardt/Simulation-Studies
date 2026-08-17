@@ -18,11 +18,12 @@ output:
 
 This document describes ...
 
-The document uses the package _tidyverse_.
+The document uses the package _tidyverse_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(evd)
+set.seed(123)
 ```
 
 ```{r}
@@ -71,13 +72,17 @@ generate.and.estimate.gompit.regression <- function(n, intercept, slope) {
   x <- rnorm(n)
   y <- intercept + slope * x + rgumbel(n)
   c <- y > 0
+  lambda <- exp(intercept + slope * x)
+  true_log_likelihood <- sum(c * log(-expm1(-lambda)) + (1 - c) * (-lambda))
   model <- glm(
     formula = c ~ 1 + x,
     family = binomial(link = "cloglog")
   )
   result <- data.frame(
     intercept = coef(model)[[1]],
-    slope = coef(model)[[2]]
+    slope = coef(model)[[2]],
+    true_log_likelihood = true_log_likelihood,
+    log_likelihood = logLik(model)
   )
   return(result)
 }
@@ -100,7 +105,7 @@ parameters
 ```{r}
 estimated.parameters <- parameters %>%
   expand_grid(
-    run = seq(200)
+    run = seq(2000)
   ) %>%
   rowwise() %>%
   mutate(
@@ -186,10 +191,9 @@ ggplot(
     x = intercept,
     y = slope
   ),
-  data = estimated.parameters,
-    alpha = 0.1
+  data = estimated.parameters
 ) +
-  geom_point() +
+  geom_point(alpha = 0.1) +
   geom_smooth(
     formula = y ~ x,
     method = "lm"
@@ -210,4 +214,62 @@ ggplot(
     facets = vars(parameter.set),
     scales = "free"
   )
+```
+# Deviance
+
+```{r}
+deviance <- estimated.parameters %>%
+  mutate(
+    deviance = 2 * (log_likelihood - true_log_likelihood)
+  )
+```
+
+```{r}
+deviance %>%
+  summarise(
+    mean = mean(deviance),
+    variance = var(deviance),
+    .by = parameter.set
+  )
+```
+
+```{r}
+ggplot() +
+  geom_density(
+    mapping = aes(
+      x = deviance
+    ),
+    data = deviance
+  ) +
+  geom_function(
+    fun = ~ dchisq(.x, df = 2),
+    colour = "red"
+  ) +
+  labs(
+    x = "Deviance",
+    y = NULL
+  ) +
+  facet_wrap(~ parameter.set)
+```
+
+```{r}
+ggplot() +
+  stat_qq(
+    mapping = aes(
+      sample = deviance
+    ),
+    data = deviance,
+    distribution = qchisq,
+    dparams = list(df = 2)
+  ) +
+  geom_abline(
+    intercept = 0,
+    slope = 1,
+    colour = "red"
+  ) +
+  labs(
+    x = "Theoretical deviance",
+    y = "Observed deviance"
+  ) +
+  facet_wrap(~ parameter.set)
 ```

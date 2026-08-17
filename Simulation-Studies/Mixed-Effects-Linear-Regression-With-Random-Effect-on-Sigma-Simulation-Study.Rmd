@@ -16,12 +16,13 @@ output:
 
 # Introduction
 
-This document describes a simulation study of a mixed effects linear regression model with the random effect on the sigma parameter of the model instead of on the mu parameter. This model is used to generate multiple datasets which are subsequently analysed to estimate the model's parameters via maximum likelihood. Multiple estimation methods are used and it is verified whether these all result in the same estimates. The document uses the packages _tidyverse_, _gamlss_ and _matrixStats_.
+This document describes a simulation study of a mixed effects linear regression model with the random effect on the sigma parameter of the model instead of on the mu parameter. This model is used to generate multiple datasets which are subsequently analysed to estimate the model's parameters via maximum likelihood. Multiple estimation methods are used and it is verified whether these all result in the same estimates. The document uses the packages _tidyverse_, _gamlss_ and _matrixStats_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(gamlss)
 library(matrixStats)
+set.seed(123)
 ```
 
 # Functions

@@ -20,10 +20,11 @@ body{text-align: justify}
 
 # Introduction
 
-This document describes a simulation study of a linear regression model with an intercept, a slope and an error term. First, the model is used to generate multiple datasets which are subsequently analysed to estimate the model's parameters via maximum likelihood. Various estimation methods are used and compared. All methods result in the same estimates but some are computationally faster than others. The document uses the package _tidyverse_.
+This document describes a simulation study of a linear regression model with an intercept, a slope and an error term. First, the model is used to generate multiple datasets which are subsequently analysed to estimate the model's parameters via maximum likelihood. Various estimation methods are used and compared. All methods result in the same estimates but some are computationally faster than others. The document uses the package _tidyverse_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
+set.seed(123)
 ```
 
 # Functions

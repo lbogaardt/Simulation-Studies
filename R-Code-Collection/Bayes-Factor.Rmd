@@ -1,0 +1,379 @@
+---
+title: "Bayes Factor"
+output:
+  html_document:
+    df_print: paged
+    fig_width: 10
+    fig.align: center
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    theme: united
+    code_folding: show
+---
+
+<style>
+body{text-align: justify}
+</style>
+
+# Introduction
+
+This document describes how the Bayes Factor can be used to evaluate the evidence for either of two model. In this document, we use the packages *tidyverse*, *cmdstanr*, *bridgesampling*, and *matrixStats*. The analysis compares an intercept-only model with a model that also includes a slope, using both bridge sampling and a Monte Carlo approximation to the marginal likelihood. And we set a seed to ensure each run of this document produces the same output.
+
+```{r results = FALSE, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(cmdstanr)
+library(bridgesampling)
+library(matrixStats)
+set_cmdstan_path("C:/cmdstan")
+set.seed(123)
+```
+
+# Set-Up
+
+The set-up defines the functions and Stan models used throughout the analysis. First, prior draws and simulated data are generated, after which the likelihood and marginal likelihood are calculated. Finally, the corresponding Stan models are specified and compiled.
+
+The `draw_prior_parameters` function generates samples from the prior distributions for the model parameters. It returns prior values for the intercept, slope and residual standard deviation.
+
+```{r}
+draw_prior_parameters <- function(slope, n = 1) {
+  result <- tibble(
+    intercept = rnorm(n, 0, 1),
+    sigma = rlnorm(n, 1, 0.1)
+  )
+  if (slope) {
+    result$slope <- rlnorm(n, -1, 0.1)
+  }
+  return(result)
+}
+```
+
+The `simulate_data` function simulates predictor values and two corresponding outcomes. One outcome follows an intercept-only model, while the other additionally includes the simulated slope.
+
+```{r}
+simulate_data <- function(n = 100) {
+  prior_draws <- draw_prior_parameters(slope = TRUE, n = 1)
+  result <- tibble(
+    x = rnorm(n, mean = 0, sd = 1)
+  ) %>%
+    mutate(
+      y_intercept_only = prior_draws$intercept + rnorm(n(), 0, prior_draws$sigma),
+      y_with_slope = y_intercept_only + prior_draws$slope * x
+    )
+  return(result)
+}
+```
+
+The `calculate_log_likelihood` function calculates the log likelihood of the observed data for a given set of parameter values. Working on the log scale helps with numerical stability when likelihood contributions are multiplied across observations.
+
+```{r}
+calculate_log_likelihood <- function(intercept, slope, sigma, x, y) {
+  result <- sum(dnorm(x = y, mean = intercept + slope * x, sd = sigma, log = TRUE))
+  return(result)
+}
+```
+
+The `estimate_log_marginal_likelihood_monte_carlo` function approximates the marginal likelihood by drawing parameter values from their prior distributions and averaging their likelihoods. The calculation is performed on the log scale using `logSumExp` for improved numerical stability.
+
+```{r}
+estimate_log_marginal_likelihood_monte_carlo <- function(x, y, slope, n = 1e5) {
+  result <- draw_prior_parameters(slope, n) %>%
+    rowwise() %>%
+    mutate(
+      calculate_log_likelihood = calculate_log_likelihood(intercept, slope, sigma, x, y)
+    ) %>%
+    ungroup() %>%
+    summarise(
+      value = logSumExp(calculate_log_likelihood) - log(n())
+    ) %>%
+    pull(value)
+  return(result)
+}
+```
+
+The following Stan model represents the intercept-only model. It contains priors for the intercept and residual standard deviation and models the outcome without a predictor slope.
+
+```{r}
+stan_model_intercept_only <- "
+data {
+  int<lower=0> N;
+  vector[N] y;
+}
+parameters {
+  real intercept;
+  real<lower=0> sigma;
+}
+model {
+  // https://cran.r-project.org/web/packages/bridgesampling/vignettes/bridgesampling_example_stan.html
+  target += normal_lpdf(intercept | 0, 1);
+  target += lognormal_lpdf(sigma | 1, 0.1);
+  target += normal_lpdf(y | intercept, sigma);
+}
+"
+```
+
+The following Stan model extends the intercept-only model by introducing a slope parameter. This allows the outcome to depend linearly on the predictor `x`.
+
+```{r}
+stan_model_with_slope <- "
+data {
+  int<lower=0> N;
+  vector[N] x;
+  vector[N] y;
+}
+parameters {
+  real intercept;
+  real<lower=0> slope;
+  real<lower=0> sigma;
+}
+model {
+  // https://cran.r-project.org/web/packages/bridgesampling/vignettes/bridgesampling_example_stan.html
+  target += normal_lpdf(intercept | 0, 1);
+  target += lognormal_lpdf(slope | -1, 0.1);
+  target += lognormal_lpdf(sigma | 1, 0.1);
+  target += normal_lpdf(y | intercept + slope * x, sigma);
+}
+"
+```
+
+The Stan model for the intercept-only specification is compiled so that it can subsequently be fitted to simulated data.
+
+```{r}
+compiled_model_intercept_only <- cmdstan_model(
+  stan_file = write_stan_file(stan_model_intercept_only),
+  compile_model_methods = TRUE,
+  force_recompile = TRUE
+)
+```
+
+The Stan model including the slope is compiled separately for comparison with the intercept-only model.
+
+```{r}
+compiled_model_with_slope <- cmdstan_model(
+  stan_file = write_stan_file(stan_model_with_slope),
+  compile_model_methods = TRUE,
+  force_recompile = TRUE
+)
+```
+
+# Single Run
+
+The single-run analysis generates one simulated dataset, fits both candidate models to both outcome variables, and compares the resulting marginal likelihoods. This provides an example of the complete workflow before repeating the analysis across multiple simulated datasets.
+
+## Generate Data
+
+A single simulated dataset is generated using the previously defined data-generating function. The resulting data contain the predictor and both simulated outcome variables.
+
+```{r}
+simulated_data <- simulate_data()
+simulated_data
+```
+
+## Fit Models
+
+The intercept-only model is fitted to the outcome generated without a slope. This represents the model that matches the data-generating mechanism in this case.
+
+```{r}
+fit_intercept_only_model_to_intercept_only_data <- compiled_model_intercept_only$sample(
+  data = list(
+    N = nrow(simulated_data),
+    y = simulated_data$y_intercept_only
+  ),
+  chains = 1
+)
+```
+
+The model including a slope is fitted to the same intercept-only outcome. This allows the additional slope parameter to be evaluated when the data do not contain a true slope effect.
+
+```{r}
+fit_slope_model_to_intercept_only_data <- compiled_model_with_slope$sample(
+  data = list(
+    N = nrow(simulated_data),
+    x = simulated_data$x,
+    y = simulated_data$y_intercept_only
+  ),
+  chains = 1
+)
+```
+
+The intercept-only model is also fitted to the outcome that was generated with a slope. This tests how well the simpler model can account for data containing a predictor effect.
+
+```{r}
+fit_intercept_only_model_to_slope_data <- compiled_model_intercept_only$sample(
+  data = list(
+    N = nrow(simulated_data),
+    y = simulated_data$y_with_slope
+  ),
+  chains = 1
+)
+```
+
+Finally, the model including a slope is fitted to the outcome generated with a slope. This represents the model that corresponds to the data-generating mechanism for this outcome.
+
+```{r}
+fit_slope_model_to_slope_data <- compiled_model_with_slope$sample(
+  data = list(
+    N = nrow(simulated_data),
+    x = simulated_data$x,
+    y = simulated_data$y_with_slope
+  ),
+  chains = 1
+)
+```
+
+## Bridge Sampling
+
+Bridge sampling is used to estimate the marginal likelihood of each fitted Stan model. The resulting objects can subsequently be used to calculate Bayes factors between competing models.
+
+The first bridge-sampling estimate corresponds to the intercept-only model fitted to the intercept-only outcome.
+
+```{r}
+bridge_fit_intercept_only_model_to_intercept_only_data <- bridge_sampler(fit_intercept_only_model_to_intercept_only_data, silent = TRUE)
+bridge_fit_intercept_only_model_to_intercept_only_data
+```
+
+The second estimate corresponds to the model including a slope fitted to the intercept-only outcome.
+
+```{r}
+bridge_fit_slope_model_to_intercept_only_data <- bridge_sampler(fit_slope_model_to_intercept_only_data, silent = TRUE)
+bridge_fit_slope_model_to_intercept_only_data
+```
+
+This estimate is obtained from the intercept-only model fitted to the outcome generated with a slope.
+
+```{r}
+bridge_fit_intercept_only_model_to_slope_data <- bridge_sampler(fit_intercept_only_model_to_slope_data, silent = TRUE)
+bridge_fit_intercept_only_model_to_slope_data
+```
+
+The final bridge-sampling estimate corresponds to the model including a slope fitted to the outcome generated with a slope.
+
+```{r}
+bridge_fit_slope_model_to_slope_data <- bridge_sampler(fit_slope_model_to_slope_data, silent = TRUE)
+bridge_fit_slope_model_to_slope_data
+```
+
+For comparison, the marginal likelihoods are also approximated directly using the Monte Carlo sampler defined above. The four calls correspond to the two model specifications applied to each of the two simulated outcomes. The marginal likelihood values should agree with those obtained via bridge sampling.
+
+```{r}
+estimate_log_marginal_likelihood_monte_carlo(simulated_data$x, simulated_data$y_intercept_only, slope = FALSE)
+estimate_log_marginal_likelihood_monte_carlo(simulated_data$x, simulated_data$y_intercept_only, slope = TRUE)
+estimate_log_marginal_likelihood_monte_carlo(simulated_data$x, simulated_data$y_with_slope, slope = FALSE)
+estimate_log_marginal_likelihood_monte_carlo(simulated_data$x, simulated_data$y_with_slope, slope = TRUE)
+```
+
+## Bayes Factor
+
+The Bayes factor compares the marginal likelihoods of two competing models. Here, the comparison is made between the intercept-only model and the model including a slope for data generated without a slope. Given that the data is generated from a intercept-only model, that model should be favoured and the log Bayes factor should be larger than zero. However, random fluctuations may give the opposite conclusion. Only when simulating many datasets, the Bayes factor should be seen to typically favour the correct model.
+
+```{r}
+bayes_factor_intercept_only_data <- bayes_factor(bridge_fit_intercept_only_model_to_intercept_only_data, bridge_fit_slope_model_to_intercept_only_data, log = TRUE)
+bayes_factor_intercept_only_data
+```
+
+The second Bayes factor performs the same model comparison for data generated with a slope. Comparing these two results illustrates how the evidence changes depending on the data-generating mechanism.
+
+```{r}
+bayes_factor_slope_data <- bayes_factor(bridge_fit_slope_model_to_slope_data, bridge_fit_intercept_only_model_to_slope_data, log = TRUE)
+bayes_factor_slope_data
+```
+
+# Multiple Runs
+
+A single simulation provides only one realization of the model-comparison procedure. The following loop repeats the simulation and fitting process multiple times, storing the Bayes factors separately for data generated without and with a slope.
+
+```{r}
+bayes_factors_intercept_only_data <- c()
+bayes_factors_slope_data <- c()
+for (i in seq(40)) {
+  simulated_data <- simulate_data()
+  simulated_data
+  fit_intercept_only_model_to_intercept_only_data <- compiled_model_intercept_only$sample(
+    data = list(
+      N = nrow(simulated_data),
+      y = simulated_data$y_intercept_only
+    ),
+    chains = 1,
+    show_messages = FALSE,
+    show_exceptions = FALSE,
+    diagnostics = NULL,
+    refresh = 0
+  )
+  fit_slope_model_to_intercept_only_data <- compiled_model_with_slope$sample(
+    data = list(
+      N = nrow(simulated_data),
+      x = simulated_data$x,
+      y = simulated_data$y_intercept_only
+    ),
+    chains = 1,
+    show_messages = FALSE,
+    show_exceptions = FALSE,
+    diagnostics = NULL,
+    refresh = 0
+  )
+  bridge_fit_intercept_only_model_to_intercept_only_data <- bridge_sampler(fit_intercept_only_model_to_intercept_only_data, silent = TRUE)
+  bridge_fit_slope_model_to_intercept_only_data <- bridge_sampler(fit_slope_model_to_intercept_only_data, silent = TRUE)
+  bayes_factor_intercept_only_data <- bayes_factor(bridge_fit_intercept_only_model_to_intercept_only_data, bridge_fit_slope_model_to_intercept_only_data, log = TRUE)
+  bayes_factors_intercept_only_data <- c(bayes_factors_intercept_only_data, bayes_factor_intercept_only_data$bf)
+  fit_intercept_only_model_to_slope_data <- compiled_model_intercept_only$sample(
+    data = list(
+      N = nrow(simulated_data),
+      y = simulated_data$y_with_slope
+    ),
+    chains = 1,
+    show_messages = FALSE,
+    show_exceptions = FALSE,
+    diagnostics = NULL,
+    refresh = 0
+  )
+  fit_slope_model_to_slope_data <- compiled_model_with_slope$sample(
+    data = list(
+      N = nrow(simulated_data),
+      x = simulated_data$x,
+      y = simulated_data$y_with_slope
+    ),
+    chains = 1,
+    show_messages = FALSE,
+    show_exceptions = FALSE,
+    diagnostics = NULL,
+    refresh = 0
+  )
+  bridge_fit_intercept_only_model_to_slope_data <- bridge_sampler(fit_intercept_only_model_to_slope_data, silent = TRUE)
+  bridge_fit_slope_model_to_slope_data <- bridge_sampler(fit_slope_model_to_slope_data, silent = TRUE)
+  bayes_factor_slope_data <- bayes_factor(bridge_fit_slope_model_to_slope_data, bridge_fit_intercept_only_model_to_slope_data, log = TRUE)
+  bayes_factors_slope_data <- c(bayes_factors_slope_data, bayes_factor_slope_data$bf)
+}
+```
+
+The distributions of the Bayes factors from the repeated simulations are visualized below. Taking the logarithm makes the distributions easier to compare around zero, where values above zero correspond to evidence in favour of the correct model. Random fluctuations, however, may give the wrong conclusion for some of the simulated datasets.
+
+```{r}
+ggplot() +
+  geom_density(
+    mapping = aes(
+      x = bayes_factors_intercept_only_data
+    )
+  ) +
+  geom_density(
+    mapping = aes(
+      x = bayes_factors_slope_data
+    ),
+    colour = "red"
+  ) +
+  geom_vline(
+    mapping = aes(
+      xintercept = c(-log(10), 0, log(10))
+    )
+  ) +
+  geom_label(
+    mapping = aes(
+      x = c(-1.5, -0.5, 0.5, 1.5) * log(10),
+      y = c(-0.2, 0.5, -0.2, 0.5),
+      label = c("Strong evidence\nagainst", "Weak evidence\nagainst", "Weak evidence\nin favour", "Strong evidence\nin favour")
+    )
+  ) +
+  labs(
+    x = "Log Bayes factor",
+    y = "Density"
+  )
+```

@@ -20,7 +20,7 @@ body{text-align: justify}
 
 # Introduction
 
-https://en.wikipedia.org/wiki/Hungarian_algorithm
+https://en.wikipedia.org/wiki/Hungarian_algorithm And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(clue)

@@ -18,11 +18,12 @@ output:
 
 This document describes ...
 
-The document uses the packages _tidyverse_ and _ordinal_.
+The document uses the packages _tidyverse_ and _ordinal_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(ordinal)
+set.seed(123)
 ```
 
 # Functions

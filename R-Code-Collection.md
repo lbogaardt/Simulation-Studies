@@ -6,6 +6,8 @@ The following pieces of code are available:
 
 - [B-Splines.html](R-Code-Collection/B-Splines.html)
   - download the notebook *[B-Splines.Rmd](R-Code-Collection/B-Splines.Rmd)*
+- [Bayes-Factor.html](R-Code-Collection/Bayes-Factor.html)
+  - download the notebook *[Bayes-Factor.Rmd](R-Code-Collection/Bayes-Factor.Rmd)*
 - [Local-Sensitivity-Analysis-and-First-Order-Uncertainty-Quantification.html](R-Code-Collection/Local-Sensitivity-Analysis-and-First-Order-Uncertainty-Quantification.html)
   - download the notebook *[Local-Sensitivity-Analysis-and-First-Order-Uncertainty-Quantification.Rmd](R-Code-Collection/Local-Sensitivity-Analysis-and-First-Order-Uncertainty-Quantification.Rmd)*
 - [P-Spline-Mixed-Effects-Model.html](R-Code-Collection/P-Spline-Mixed-Effects-Model.html)

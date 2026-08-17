@@ -28,11 +28,12 @@ Relevant references include:
 
 This document describes ...
 
-The document uses the package _tidyverse_ and _lcmm_.
+The document uses the package _tidyverse_ and _lcmm_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(lcmm)
+set.seed(123)
 ```
 
 # Functions

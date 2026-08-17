@@ -22,12 +22,12 @@ body{text-align: justify}
 
 This document describes a simulation study of a survival analysis with a Weibull distribution. The document is structured as follows. In section [Theory and Functions], we will look into the mathematics of the  model and define several functions which we will use throughout the remainder of the document. In section [Define Parameters], we create a table with various parameter values for each of the model's parameters. In section [Estimate All Models], we generate multiple datasets which are subsequently analysed to estimate the model's parameters via maximum likelihood. Various estimation methods are used and compared. All methods result in the same estimates but some are computationally faster than others. This is checked in section [Compare Models]. After having verified that all models produce the same estimates, the fastest performing model is run again in section [Estimate Fastest Model]. Finally, in sections [Visualise Estimated Parameters] and [Visualise Parameter Correlations], the estimated parameter values are compared to the input defined in section [Define Parameters].
 
-Before we begin, we need to load the packages _tidyverse_ and _flexsurv_. And we set a seed to ensure that all runs of this document produce the same output.
+Before we begin, we need to load the packages _tidyverse_ and _flexsurv_. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(flexsurv)
-set.seed(555)
+set.seed(123)
 ```
 
 # Theory and Functions

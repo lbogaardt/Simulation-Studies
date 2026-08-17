@@ -20,7 +20,7 @@ body{text-align: justify}
 
 # Introduction
 
-This document shows how local sensitivity analysis can be done by examining all derivatives of a function with respect to its parameters, and how these derivatives can be used to speed up uncertainty quantification compared to a Monte Carlo approach, assuming the model's output is approximately linear in its input. If the input data is normally distributed, the surrogate model even allows for determining the output distribution analytically.
+This document shows how local sensitivity analysis can be done by examining all derivatives of a function with respect to its parameters, and how these derivatives can be used to speed up uncertainty quantification compared to a Monte Carlo approach, assuming the model's output is approximately linear in its input. If the input data is normally distributed, the surrogate model even allows for determining the output distribution analytically. And we set a seed to ensure each run of this document produces the same output.
 
 ```{r results = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)

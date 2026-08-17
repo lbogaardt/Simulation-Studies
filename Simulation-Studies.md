@@ -1,6 +1,6 @@
 Click [here](./) to go back.
 
-# Simulation Studies
+# Simulation Study
 
 The following simulation studies are available:
 
@@ -14,6 +14,8 @@ The following simulation studies are available:
   - download the notebook *[Growth-Mixture-Model-Simulation-Study.Rmd](Simulation-Studies/Growth-Mixture-Model-Simulation-Study.Rmd)*
 - [Heteroscadastic-B-Spline-Mixed-Effects-Model-Simulation-Study.html](Simulation-Studies/Heteroscadastic-B-Spline-Mixed-Effects-Model-Simulation-Study.html)
   - download the notebook *[Heteroscadastic-B-Spline-Mixed-Effects-Model-Simulation-Study.Rmd](Simulation-Studies/Heteroscadastic-B-Spline-Mixed-Effects-Model-Simulation-Study.Rmd)*
+- [Interval-Censored-Normal-Distribution-Simulation-Study.html](Simulation-Studies/Interval-Censored-Normal-Distribution-Simulation-Study.html)
+  - download the notebook *[Interval-Censored-Normal-Distribution-Simulation-Study.Rmd](Simulation-Studies/Interval-Censored-Normal-Distribution-Simulation-Study.Rmd)*
 - [Linear-Regression-Simulation-Study.html](Simulation-Studies/Linear-Regression-Simulation-Study.html)
   - download the notebook *[Linear-Regression-Simulation-Study.Rmd](Simulation-Studies/Linear-Regression-Simulation-Study.Rmd)*
 - [Logit-Regression-Simulation-Study.html](Simulation-Studies/Logit-Regression-Simulation-Study.html)
@@ -34,6 +36,8 @@ The following simulation studies are available:
   - download the notebook *[Ordinal-Probit-Regression-Simulation-Study.Rmd](Simulation-Studies/Ordinal-Probit-Regression-Simulation-Study.Rmd)*
 - [Probit-Regression-Simulation-Study.html](Simulation-Studies/Probit-Regression-Simulation-Study.html)
   - download the notebook *[Probit-Regression-Simulation-Study.Rmd](Simulation-Studies/Probit-Regression-Simulation-Study.Rmd)*
+- [Spatial-Kernel-Simulation-Study.html](Simulation-Studies/Spatial-Kernel-Simulation-Study.html)
+  - download the notebook *[Spatial-Kernel-Simulation-Study.Rmd](Simulation-Studies/Spatial-Kernel-Simulation-Study.Rmd)*
 - [Survival-Analysis-with-Gompertz-Distribution-Simulation-Study.html](Simulation-Studies/Survival-Analysis-with-Gompertz-Distribution-Simulation-Study.html)
   - download the notebook *[Survival-Analysis-with-Gompertz-Distribution-Simulation-Study.Rmd](Simulation-Studies/Survival-Analysis-with-Gompertz-Distribution-Simulation-Study.Rmd)*
 
